@@ -7,74 +7,79 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"sync"
+)
+
+const (
+	maxSize = 1024 * 1024
 )
 
 var (
-	// * keywords to search for in file
-	keywords = []string{"tv", "github", "//", "aws"}
-	results  = make(chan string)
+	results      = []string{}
+	keywords     = []string{"github", "aws", "//", "/*", "*/"}
+	file_formats = []string{".txt", ".gitignore", ".ts", ".js", ".sum", ".mod", ".md", ".sh", ".json", ".yaml", ".lock", ".tf", ".go", ".py", ".groovy", ".csh", ".html", ".css"}
 )
 
 func main() {
 	log.Println("Starting Code Searcher...")
-
 	// * Variables
 	var dir string
-	var wg sync.WaitGroup
-
 	// * Read the flag
 	flag.StringVar(&dir, "d", ".", "Specifies the directory to search. Default searches the current dir")
 	flag.Parse()
-
 	// * Directory looping
 	log.Println("Searching dir: ", dir)
 	err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
-			log.Fatal(err)
-			return nil
+			log.Println(err)
 		}
 		if !info.IsDir() {
 			// * Add the task to the wait queue and read file
-			wg.Add(1)
-			go func() {
-				defer wg.Done()
-				ReadFile(path)
-			}()
+			for _, ext := range file_formats {
+				if filepath.Ext(path) == ext {
+					ReadFile(path)
+				}
+			}
 		}
 		return nil
 	})
 	if err != nil {
 		panic(err)
 	}
-	go func() {
-		// * When the wait queue ends close the channel
-		wg.Wait()
-		close(results)
-	}()
-	for i := range results {
-		// * Loop throught the results in channel and print it
-		log.Println(i)
-	}
+	writeToFile()
 }
 
 func ReadFile(path string) {
+	log.Println("Searching in: ", path)
 	file, err := os.Open(path)
 	if err != nil {
 		log.Println(err)
 	}
 	defer file.Close()
 	scanner := bufio.NewScanner(file)
+	buffer := make([]byte, 0, maxSize)
+	scanner.Buffer(buffer, maxSize)
 	for scanner.Scan() {
 		line := string(scanner.Text())
 		// * Check the line for keywords
 		for _, i := range keywords {
 			if strings.Contains(line, i) {
-				results <- line
+				results = append(results, line)
 			}
 		}
 	}
 	if err := scanner.Err(); err != nil {
 		log.Println(err)
+	}
+}
+
+func writeToFile() {
+	file, err := os.Create("result.txt")
+	if err != nil {
+		panic(err)
+	}
+	defer file.Close()
+	for _, line := range results {
+		// * Loop through the results in results and write to file
+		file.WriteString(line + "\n")
 	}
 }
