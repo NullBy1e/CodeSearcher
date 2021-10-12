@@ -15,9 +15,9 @@ const (
 )
 
 var (
-	results      = []string{}
 	keywords     = []string{"github", ".com", "//", "/*", "*/"}
 	file_formats = []string{".txt", ".gitignore", ".ts", ".js", ".sum", ".mod", ".md", ".sh", ".json", ".yaml", ".lock", ".tf", ".go", ".py", ".groovy", ".csh", ".html", ".css"}
+	file_name    = "results.txt"
 )
 
 func main() {
@@ -46,7 +46,6 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	writeToFile()
 }
 
 func ReadFile(path string) {
@@ -64,7 +63,7 @@ func ReadFile(path string) {
 		// * Check the line for keywords
 		for _, i := range keywords {
 			if strings.Contains(line, i) {
-				results = append(results, line+"; "+path)
+				writeToFile(line + "/;#;/" + path)
 				break
 			}
 		}
@@ -74,16 +73,18 @@ func ReadFile(path string) {
 	}
 }
 
-func writeToFile() {
-	// TODO: Make write to file method not rely on finishing the search
-	file, err := os.Create("result.txt")
+func writeToFile(data string) {
+	// If the file doesn't exist, create it, or append to the file
+	f, err := os.OpenFile(file_name, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
-	defer file.Close()
-	for _, line := range results {
-		// * Loop through the results in results and write to file
-		file.WriteString(line + "\n")
+	if _, err := f.Write([]byte(data + "\n")); err != nil {
+		f.Close() // ignore error; Write error takes precedence
+		log.Fatal(err)
+	}
+	if err := f.Close(); err != nil {
+		log.Fatal(err)
 	}
 }
 
