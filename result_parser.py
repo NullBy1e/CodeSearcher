@@ -8,10 +8,6 @@ with open("results.txt","rt") as file:
     lines = results.split("\n")
     for line in lines:
         # * Remove tabs and new lines
-        for char in '\t':
-            formatted_line = line.replace(char,'')
-        for char in '\n':
-            formatted_line = line.replace(char,'')
         formatted_line = re.sub('[\t,\n,]','',line)
         # * Write to formatted_results
         try:
