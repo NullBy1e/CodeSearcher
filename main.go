@@ -87,5 +87,3 @@ func writeToFile(data string) {
 		log.Fatal(err)
 	}
 }
-
-// TODO: Create a Python script that parses the result.txt
