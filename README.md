@@ -1,4 +1,7 @@
 # Code Searcher
 
-Basic utility that searches directories and files for commments and links
+Utility that searches lines with keywords in lines of files.
+
+Use the first arg to specify directory to be searched
+
 Written in Go

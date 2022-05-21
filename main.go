@@ -2,7 +2,6 @@ package main
 
 import (
 	"bufio"
-	"flag"
 	"log"
 	"os"
 	"path/filepath"
@@ -10,29 +9,37 @@ import (
 )
 
 const (
-	// * Buffer size for the file
+	// * Max Buffer size for the file
 	maxSize = 1024 * 1024
 )
 
 var (
-	keywords     = []string{"github", ".com", "//", "/*", "*/"}
-	file_formats = []string{".txt", ".gitignore", ".ts", ".js", ".sum", ".mod", ".md", ".sh", ".json", ".yaml", ".lock", ".tf", ".go", ".py", ".groovy", ".csh", ".html", ".css"}
-	file_name    = "results.txt"
+	// * Keywords and file formats to search for
+	keywords           = []string{"github", ".com", "//", "/*", "*/"}
+	file_formats       = []string{".txt", ".md", ".json", ".yaml", ".yml", ".ts", ".js", ".sh", ".go", ".py", ".html", ".css", ".cs", ".java", ".c", ".o", ".h"}
+	restricted_folders = []string{"node_modules", ".vscode", ".git"}
+	file_name          = "results.txt"
 )
 
 func main() {
-	log.Println("Starting Code Searcher...")
-	// * Variables
-	var dir string
-	// * Read the flag
-	flag.StringVar(&dir, "d", ".", "Specifies the directory to search. Default searches the current dir")
-	flag.Parse()
-	// * Directory looping
+	dir := os.Args[1]
 	log.Println("Searching dir: ", dir)
+
 	err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			log.Fatalln(err)
 		}
+
+		if info.IsDir() {
+			// * Check if the dir is allowed to be searched
+			for _, restricted_dir := range restricted_folders {
+				if restricted_dir == info.Name() {
+					log.Println("Folder is restricted for searching")
+					return filepath.SkipDir
+				}
+			}
+		}
+
 		if !info.IsDir() {
 			// * If the file isn't diretory and matches the file format read the file
 			for _, ext := range file_formats {
@@ -55,15 +62,18 @@ func ReadFile(path string) {
 		log.Println(err)
 	}
 	defer file.Close()
+
 	scanner := bufio.NewScanner(file)
 	buffer := make([]byte, 0, maxSize)
 	scanner.Buffer(buffer, maxSize)
+
 	for scanner.Scan() {
 		line := string(scanner.Text())
+		key := "/;#;/"
 		// * Check the line for keywords
 		for _, i := range keywords {
 			if strings.Contains(line, i) {
-				writeToFile(line + "/;#;/" + path)
+				writeToFile(line + key + path)
 				break
 			}
 		}
@@ -74,13 +84,12 @@ func ReadFile(path string) {
 }
 
 func writeToFile(data string) {
-	// If the file doesn't exist, create it, or append to the file
 	f, err := os.OpenFile(file_name, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		log.Fatal(err)
 	}
 	if _, err := f.Write([]byte(data + "\n")); err != nil {
-		f.Close() // ignore error; Write error takes precedence
+		f.Close()
 		log.Fatal(err)
 	}
 	if err := f.Close(); err != nil {
