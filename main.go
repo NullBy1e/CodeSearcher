@@ -9,12 +9,12 @@ import (
 )
 
 const (
-	// * Max Buffer size for the file
-	maxSize = 1024 * 1024
+	// * Max buffer size for the file
+	maxBufferSize = 1024 * 1024
 )
 
 var (
-	// * Keywords and file formats to search for
+	// * Keywords, file formats and restricted folders
 	keywords           = []string{"github", ".com", "//", "/*", "*/"}
 	file_formats       = []string{".txt", ".md", ".json", ".yaml", ".yml", ".ts", ".js", ".sh", ".go", ".py", ".html", ".css", ".cs", ".java", ".c", ".o", ".h"}
 	restricted_folders = []string{"node_modules", ".vscode", ".git"}
@@ -64,8 +64,8 @@ func ReadFile(path string) {
 	defer file.Close()
 
 	scanner := bufio.NewScanner(file)
-	buffer := make([]byte, 0, maxSize)
-	scanner.Buffer(buffer, maxSize)
+	buffer := make([]byte, 0, maxBufferSize)
+	scanner.Buffer(buffer, maxBufferSize)
 
 	for scanner.Scan() {
 		line := string(scanner.Text())
